@@ -10,29 +10,42 @@ import List from "./components/List";
 import Chain from "./components/Chain";
 
 import { CardType } from "./types/CardType";
+import Habit from "./types/Habit";
 import Task from "./types/Task";
 
 const Home = () => {
   const [db, setDb] = useState<IDBPDatabase | null>(null);
 
-  const [habits, setHabits] = useState<Task[][]>([
-    [
-      { id: 3, text: "Gainer", type: CardType.Gainers },
-      { id: 2, text: "Sapper", type: CardType.Rewards },
-      { id: 3, text: "Reward", type: CardType.Sappers },
-    ],
-    [
-      { id: 4, text: "Gainer", type: CardType.Gainers },
-      { id: 4, text: "Sapper", type: CardType.Sappers },
-    ],
-    [
-      { id: 5, text: "Reward", type: CardType.Rewards },
-      { id: 5, text: "Sapper", type: CardType.Sappers },
-    ],
-    [
-      { id: 6, text: "Gainer", type: CardType.Gainers },
-      { id: 6, text: "Reward", type: CardType.Rewards },
-    ],
+  const [habits, setHabits] = useState<Habit[]>([
+    {
+      id: 3,
+      tasks: [
+        { id: 3, text: "Gainer", type: CardType.Gainers },
+        { id: 2, text: "Sapper", type: CardType.Rewards },
+        { id: 3, text: "Reward", type: CardType.Sappers },
+      ],
+    },
+    {
+      id: 4,
+      tasks: [
+        { id: 4, text: "Gainer", type: CardType.Gainers },
+        { id: 4, text: "Sapper", type: CardType.Sappers },
+      ],
+    },
+    {
+      id: 5,
+      tasks: [
+        { id: 5, text: "Reward", type: CardType.Rewards },
+        { id: 5, text: "Sapper", type: CardType.Sappers },
+      ],
+    },
+    {
+      id: 7,
+      tasks: [
+        { id: 6, text: "Gainer", type: CardType.Gainers },
+        { id: 6, text: "Reward", type: CardType.Rewards },
+      ],
+    },
   ]);
 
   const [sappers, setSappers] = useState<any>([]);
@@ -117,6 +130,7 @@ const Home = () => {
 
     let nextKey;
 
+    // Determines the next key by traversing through the array and supplying the key with one higher of the highest key
     nextKey =
       data.length !== 0
         ? data.reduce((prev: any, current: any) => {
@@ -247,10 +261,13 @@ const Home = () => {
         })}
       </div> */}
       <div className="flex flex-col content-start m-4 border border-gray-400 bg-white rounded p-4 leading-normal">
-        {habits.map((habit: Task[]) => {
+        {habits.map((habit: Habit, index: number) => {
           return (
             <Chain
               habit={habit}
+              index={index}
+              setHabits={setHabits}
+              deleteCard={deleteCard}
             />
           );
         })}

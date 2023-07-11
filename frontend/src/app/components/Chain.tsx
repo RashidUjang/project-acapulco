@@ -1,31 +1,51 @@
 import ChainCard from "./ChainCard";
 
 import { CardType } from "../types/CardType";
+import Habit from "../types/Habit";
 import Task from "../types/Task";
 
-const Chain = ({ habit }: { habit: Task[] }) => {
+const Chain = ({
+  habit,
+  index,
+  setHabits,
+  deleteCard,
+}: {
+  habit: Habit;
+  index: number;
+  setHabits: Function;
+  deleteCard: Function;
+}) => {
   return (
     <div className="flex m-4 p-4 border border-gray-400 bg-white ">
       <ChainCard
-        text={
-          habit.filter((task: Task) => {
+        habitId={habit.id}
+        task={
+          habit.tasks.filter((task: Task) => {
             return task.type === CardType.Gainers;
-          })[0]?.text ?? "Drop a Gainer here"
+          })[0]
         }
+        type={CardType.Gainers}
+        setHabits={setHabits}
       />
       <ChainCard
-        text={
-          habit.filter((task: Task) => {
+        habitId={habit.id}
+        task={
+          habit.tasks.filter((task: Task) => {
             return task.type === CardType.Sappers;
-          })[0]?.text ?? "Drop a Sapper here"
+          })[0]
         }
+        type={CardType.Sappers}
+        setHabits={setHabits}
       />
       <ChainCard
-        text={
-          habit.filter((task: Task) => {
+        habitId={habit.id}
+        task={
+          habit.tasks.filter((task: Task) => {
             return task.type === CardType.Rewards;
-          })[0]?.text ?? "Drop a Reward here"
+          })[0]
         }
+        type={CardType.Rewards}
+        setHabits={setHabits}
       />
     </div>
   );

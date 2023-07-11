@@ -24,7 +24,7 @@ const Card = ({
   editCard: Function;
   deleteCard: Function;
 }) => {
-  const ref = useRef<HTMLDivElement>();
+  const ref = useRef<HTMLDivElement>(null);
   const [showControls, setShowControls] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [newTaskTitle, setNewTaskTitle] = useState<string>(taskTitle);
@@ -35,7 +35,7 @@ const Card = ({
     collect(monitor) {
       return {
         handlerId: monitor.getHandlerId(),
-        didDrop: monitor.didDrop()
+        didDrop: monitor.didDrop(),
       };
     },
     hover(item, monitor) {
@@ -44,8 +44,8 @@ const Card = ({
         return;
       }
 
-      const draggedItemIndex = item.index;
-      const droppableItemIndex = cardIndex;
+      const draggedItemIndex: number = item.index;
+      const droppableItemIndex: number = cardIndex;
 
       if (draggedItemIndex === droppableItemIndex) {
         return;
@@ -82,6 +82,7 @@ const Card = ({
       item.index = droppableItemIndex;
     },
   });
+
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.CARD,
     item: { id, index: cardIndex, type: cardType },
@@ -89,6 +90,7 @@ const Card = ({
       isDragging: monitor.isDragging(),
     }),
   });
+
   drag(drop(ref));
 
   const onMouseEnterHandler = () => {
@@ -114,8 +116,8 @@ const Card = ({
   };
 
   const onDeleteHandler = () => {
-    deleteCard(cardType, id)
-  }
+    deleteCard(cardType, id);
+  };
 
   return (
     <div
