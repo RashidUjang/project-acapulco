@@ -3,41 +3,41 @@
 import { useEffect, useState, useCallback } from "react";
 import { DndProvider } from "react-dnd-multi-backend";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { openDB, deleteDB, wrap, unwrap, IDBPDatabase } from "idb";
-import update from "immutability-helper";
+import { openDB, IDBPDatabase } from "idb";
 
 import Card from "./components/Card";
-import PlusButton from "./components/PlusButton";
 import List from "./components/List";
+import Chain from "./components/Chain";
 
 import { CardType } from "./types/CardType";
-import { idText } from "typescript";
+import Task from "./types/Task";
 
 const Home = () => {
   const [db, setDb] = useState<IDBPDatabase | null>(null);
 
-  const [habits, setHabits] = useState([
-    { id: 1, text: "Item 1" },
-    { id: 2, text: "Item 2" },
-    { id: 3, text: "Item 3" },
+  const [habits, setHabits] = useState<Task[][]>([
+    [
+      { id: 3, text: "Gainer", type: CardType.Gainers },
+      { id: 2, text: "Sapper", type: CardType.Rewards },
+      { id: 3, text: "Reward", type: CardType.Sappers },
+    ],
+    [
+      { id: 4, text: "Gainer", type: CardType.Gainers },
+      { id: 4, text: "Sapper", type: CardType.Sappers },
+    ],
+    [
+      { id: 5, text: "Reward", type: CardType.Rewards },
+      { id: 5, text: "Sapper", type: CardType.Sappers },
+    ],
+    [
+      { id: 6, text: "Gainer", type: CardType.Gainers },
+      { id: 6, text: "Reward", type: CardType.Rewards },
+    ],
   ]);
 
-  const [sappers, setSappers] = useState([
-    { id: 1, text: "Item 1", type: CardType.Sappers },
-    { id: 2, text: "Item 2", type: CardType.Sappers },
-    { id: 3, text: "Item 1", type: CardType.Sappers },
-    { id: 4, text: "Item 2", type: CardType.Sappers },
-    { id: 5, text: "Item 1", type: CardType.Sappers },
-    { id: 6, text: "Item 2", type: CardType.Sappers },
-  ]);
-
-  const [gainers, setGainers] = useState<any>(null);
-
-  const [rewards, setRewards] = useState([
-    { id: 5, text: "Item 5", type: CardType.Rewards },
-    { id: 6, text: "Item 6", type: CardType.Rewards },
-  ]);
+  const [sappers, setSappers] = useState<any>([]);
+  const [gainers, setGainers] = useState<any>([]);
+  const [rewards, setRewards] = useState<any>([]);
 
   useEffect(() => {
     // Helper inner method to perform async operations for IndexedDB
@@ -45,13 +45,13 @@ const Home = () => {
       const database = await openDB("acapulco", 1, {
         upgrade(db) {
           db.createObjectStore(CardType.Gainers as unknown as string, {
-            keyPath: 'id'
+            keyPath: "id",
           });
           db.createObjectStore(CardType.Sappers as unknown as string, {
-            keyPath: 'id'
+            keyPath: "id",
           });
           db.createObjectStore(CardType.Rewards as unknown as string, {
-            keyPath: 'id'
+            keyPath: "id",
           });
         },
       });
@@ -70,33 +70,103 @@ const Home = () => {
   }, [db]);
 
   const getAll = async () => {
-    console.log("🚀 ~ file: page.tsx:75 ~ db?.getAll(CardType.Gainers):", await db?.getAllKeys(CardType.Gainers))
-
-    setGainers(
-      (await db?.getAll(CardType.Gainers))?.map((card, index) => {
-        return { id: index, ...card };
-      })
-    );
+    setGainers(await db?.getAll(CardType.Gainers));
+    setSappers(await db?.getAll(CardType.Sappers));
+    setRewards(await db?.getAll(CardType.Rewards));
   };
 
+  useEffect(() => {
+    const syncStateWithIdb = async () => {
+      await db?.clear(CardType.Gainers);
+      await db?.clear(CardType.Sappers);
+      await db?.clear(CardType.Rewards);
+
+      gainers?.map(async (gainer: any, index: number) => {
+        // TODO: Reordered state is not saved!
+        // gainer.id = index;
+        await db?.put(CardType.Gainers, gainer);
+      });
+      sappers?.map(async (sapper: any, index: number) => {
+        // sapper.id = index;
+        await db?.put(CardType.Sappers, sapper);
+      });
+      rewards?.map(async (reward: any, index: number) => {
+        // reward.id = index;
+        await db?.put(CardType.Rewards, reward);
+      });
+    };
+
+    syncStateWithIdb();
+  }, [gainers, sappers, rewards]);
+
   const addCard = async (storeName: CardType, text: string) => {
-    await db?.put(storeName, { text, type: storeName });
+    // Keygen function that determines the next available id
+    let data;
+
+    switch (storeName) {
+      case CardType.Gainers:
+        data = gainers;
+        break;
+      case CardType.Sappers:
+        data = sappers;
+        break;
+      case CardType.Rewards:
+        data = rewards;
+        break;
+    }
+
+    let nextKey;
+
+    nextKey =
+      data.length !== 0
+        ? data.reduce((prev: any, current: any) => {
+            return prev.id > current.id ? prev : current;
+          }).id + 1
+        : 0;
+
+    await db?.put(storeName, { id: nextKey, text, type: storeName });
     await getAll();
   };
 
   const editCard = async (storeName: CardType, text: string, id: number) => {
-    await db?.put(storeName, { text, type: storeName }, id);
+    await db?.put(storeName, { id, text, type: storeName });
     await getAll();
   };
 
   const deleteCard = async (storeName: CardType, id: number) => {
-    console.log("🚀 ~ file: page.tsx:90 ~ deleteCard ~ storeName: CardType, id: number:", storeName, id)
-    await db?.delete(storeName, id);
-    await getAll();
+    // Delete item from state
+    switch (storeName) {
+      case CardType.Gainers:
+        setGainers((previousGainers: any) => {
+          console.log(previousGainers);
+          return previousGainers.filter((element: any, index: any) => {
+            return element.id !== id;
+          });
+        });
+        break;
+      case CardType.Sappers:
+        setSappers((previousGainers: any) => {
+          return previousGainers.filter((element: any, index: any) => {
+            return element.id !== id;
+          });
+        });
+        break;
+      case CardType.Rewards:
+        setRewards((previousGainers: any) => {
+          return previousGainers.filter((element: any, index: any) => {
+            return element.id !== id;
+          });
+        });
+        break;
+    }
   };
 
   const changePosition = useCallback(
-    (draggedItemIndex: number, droppableItemIndex: number, type: CardType) => {
+    async (
+      draggedItemIndex: number,
+      droppableItemIndex: number,
+      type: CardType
+    ) => {
       let setFunction: any;
 
       switch (type) {
@@ -126,46 +196,11 @@ const Home = () => {
           previousCards[draggedItemIndex]
         );
 
-        console.log(copyPreviousCards)
-
         return copyPreviousCards;
       });
-
     },
     [gainers, sappers, rewards]
   );
-
-  // const changePosition = useCallback(
-  //   (dragIndex: any, hoverIndex: any, type: CardType) => {
-  //     let setFunction: any;
-
-  //     switch (type) {
-  //       case CardType.Gainers:
-  //         setFunction = setGainers;
-  //         break;
-  //       case CardType.Sappers:
-  //         setFunction = setSappers;
-  //         break;
-  //       case CardType.Rewards:
-  //         setFunction = setRewards;
-  //         break;
-  //     }
-
-  //     if (!setFunction) {
-  //       return;
-  //     }
-
-  //     setFunction((prevCards: any) =>
-  //       update(prevCards, {
-  //         $splice: [
-  //           [dragIndex, 1],
-  //           [hoverIndex, 0, prevCards[dragIndex]],
-  //         ],
-  //       })
-  //     );
-  //   },
-  //   []
-  // );
 
   return (
     <DndProvider options={HTML5toTouch}>
@@ -198,7 +233,7 @@ const Home = () => {
       </div>
 
       <h2 className="m-4">Chains</h2>
-      <div className="flex content-start m-4 border border-gray-400 bg-white rounded p-4 leading-normal">
+      {/* <div className="flex content-start m-4 border border-gray-400 bg-white rounded p-4 leading-normal">
         {habits.map((card, index) => {
           return (
             <Card
@@ -210,8 +245,17 @@ const Home = () => {
             />
           );
         })}
+      </div> */}
+      <div className="flex flex-col content-start m-4 border border-gray-400 bg-white rounded p-4 leading-normal">
+        {habits.map((habit: Task[]) => {
+          return (
+            <Chain
+              habit={habit}
+            />
+          );
+        })}
       </div>
-      {/* <button onClick={getAll}>Debug button</button> */}
+      {/* <button onClick={() => syncStateWithIdb(CardType.Gainers)}>Debug button</button> */}
     </DndProvider>
   );
 };

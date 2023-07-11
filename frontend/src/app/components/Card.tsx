@@ -30,11 +30,12 @@ const Card = ({
   const [newTaskTitle, setNewTaskTitle] = useState<string>(taskTitle);
 
   // Declare drag items
-  const [{ handlerId }, drop] = useDrop({
+  const [{ handlerId, didDrop }, drop] = useDrop({
     accept: ItemTypes.CARD,
     collect(monitor) {
       return {
         handlerId: monitor.getHandlerId(),
+        didDrop: monitor.didDrop()
       };
     },
     hover(item, monitor) {
