@@ -146,7 +146,7 @@ const Card = ({
                 className="overflow-hidden text-gray-900 leading-none focus:outline-none resize-none"
               ></TextareaAutoSize>
             )}
-            <p className="text-gray-900 leading-none">{cardIndex.toString()}</p>
+            {/* <p className="text-gray-900 leading-none">{cardIndex.toString()}</p> */}
           </div>
         </div>
         {!isEditing && showControls && (

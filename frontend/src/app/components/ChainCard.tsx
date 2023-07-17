@@ -21,29 +21,34 @@ const ChainCard = ({
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [showControls, setShowControls] = useState<boolean>(false);
+  let droppable;
 
-  const [{ isDragging }, drag] = useDrag({
+  const [{ getItem, isDragging }, drag] = useDrag({
     type: ItemTypes.HABIT,
     item: { task },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
+      getItem: monitor.getItem(),
     }),
   });
 
-  const [, drop] = useDrop({
+  const [{ isOver, canDrop }, drop] = useDrop({
     accept: ItemTypes.CARD,
     collect(monitor) {
       return {
         handlerId: monitor.getHandlerId(),
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop(),
       };
     },
     hover(item, monitor) {
       let itemWithType = item;
       if (!task && type === (item as Task).type) {
-        console.log("match");
+        droppable = true;
         return;
       }
 
+      droppable = false;
       // Set Habits
     },
     drop(item, monitor) {
@@ -69,21 +74,27 @@ const ChainCard = ({
 
   drag(drop(ref));
 
-  const onRemoveHandler = () => {}
-
+  const onRemoveHandler = () => {};
+  
   return (
     <div
       ref={ref}
       className={`w-full m-4 p-4 border ${
-        task ? "border-solid" : "border-dotted text-gray-400"
-      } border-gray-400 bg-white`}
+        task || (isOver && canDrop)
+          ? "border-solid"
+          : "border-dotted text-gray-400"
+      } ${
+        task || (canDrop && getItem?.type === type) ? "border-gray-400" : "border-red-400"
+      }  bg-white`}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >
       <div>{task ? task.text : `Drop ${type} here`}</div>
-      {showControls && (
-        <button className="mt-3 mr-2 bg-transparent text-red-700 font-bold py-2 px-4 rounded"
-        onClick={onRemoveHandler}>
+      {task && showControls && (
+        <button
+          className="mt-3 mr-2 bg-transparent text-red-700 font-bold py-2 px-4 rounded"
+          onClick={onRemoveHandler}
+        >
           Remove
         </button>
       )}

@@ -5,49 +5,17 @@ import { DndProvider } from "react-dnd-multi-backend";
 import { HTML5toTouch } from "rdndmb-html5-to-touch";
 import { openDB, IDBPDatabase } from "idb";
 
-import Card from "./components/Card";
 import List from "./components/List";
-import Chain from "./components/Chain";
 
 import { CardType } from "./types/CardType";
 import Habit from "./types/Habit";
 import Task from "./types/Task";
+import ChainList from "./components/ChainList";
 
 const Home = () => {
   const [db, setDb] = useState<IDBPDatabase | null>(null);
 
-  const [habits, setHabits] = useState<Habit[]>([
-    {
-      id: 3,
-      tasks: [
-        { id: 3, text: "Gainer", type: CardType.Gainers },
-        { id: 2, text: "Sapper", type: CardType.Rewards },
-        { id: 3, text: "Reward", type: CardType.Sappers },
-      ],
-    },
-    {
-      id: 4,
-      tasks: [
-        { id: 4, text: "Gainer", type: CardType.Gainers },
-        { id: 4, text: "Sapper", type: CardType.Sappers },
-      ],
-    },
-    {
-      id: 5,
-      tasks: [
-        { id: 5, text: "Reward", type: CardType.Rewards },
-        { id: 5, text: "Sapper", type: CardType.Sappers },
-      ],
-    },
-    {
-      id: 7,
-      tasks: [
-        { id: 6, text: "Gainer", type: CardType.Gainers },
-        { id: 6, text: "Reward", type: CardType.Rewards },
-      ],
-    },
-  ]);
-
+  const [habits, setHabits] = useState<any>([]);
   const [sappers, setSappers] = useState<any>([]);
   const [gainers, setGainers] = useState<any>([]);
   const [rewards, setRewards] = useState<any>([]);
@@ -64,6 +32,9 @@ const Home = () => {
             keyPath: "id",
           });
           db.createObjectStore(CardType.Rewards as unknown as string, {
+            keyPath: "id",
+          });
+          db.createObjectStore("habits", {
             keyPath: "id",
           });
         },
@@ -86,6 +57,7 @@ const Home = () => {
     setGainers(await db?.getAll(CardType.Gainers));
     setSappers(await db?.getAll(CardType.Sappers));
     setRewards(await db?.getAll(CardType.Rewards));
+    setHabits(await db?.getAll("habits"));
   };
 
   useEffect(() => {
@@ -93,6 +65,7 @@ const Home = () => {
       await db?.clear(CardType.Gainers);
       await db?.clear(CardType.Sappers);
       await db?.clear(CardType.Rewards);
+      await db?.clear("habits");
 
       gainers?.map(async (gainer: any, index: number) => {
         // TODO: Reordered state is not saved!
@@ -107,10 +80,13 @@ const Home = () => {
         // reward.id = index;
         await db?.put(CardType.Rewards, reward);
       });
+      habits?.map(async (habit: any, index: number) => {
+        await db?.put("habits", habit);
+      });
     };
 
     syncStateWithIdb();
-  }, [gainers, sappers, rewards]);
+  }, [gainers, sappers, rewards, habits]);
 
   const addCard = async (storeName: CardType, text: string) => {
     // Keygen function that determines the next available id
@@ -152,7 +128,6 @@ const Home = () => {
     switch (storeName) {
       case CardType.Gainers:
         setGainers((previousGainers: any) => {
-          console.log(previousGainers);
           return previousGainers.filter((element: any, index: any) => {
             return element.id !== id;
           });
@@ -174,6 +149,8 @@ const Home = () => {
         break;
     }
   };
+
+  const deleteHabit = () => {}
 
   const changePosition = useCallback(
     async (
@@ -216,6 +193,22 @@ const Home = () => {
     [gainers, sappers, rewards]
   );
 
+  const addHabit = () => {
+    let nextKey =
+      habits.length !== 0
+        ? habits.reduce((prev: any, current: any) => {
+            return prev.id > current.id ? prev : current;
+          }).id + 1
+        : 1;
+    
+    setHabits((previousHabits: Habit[]) => {
+      // New array needed because React performs an optimization where it performs an equality check and if it passes it doesn't re-render components. Objects are compared shallowly and thus need to be recreated.
+      let newHabits = [...previousHabits];
+      newHabits.push({ id: nextKey, tasks: [] });
+      return newHabits
+    });
+  };
+
   return (
     <DndProvider options={HTML5toTouch}>
       <h2 className="m-4">Habits</h2>
@@ -235,7 +228,7 @@ const Home = () => {
           addCard={addCard}
           editCard={editCard}
           deleteCard={deleteCard}
-        ></List>
+        />
         <List
           items={rewards}
           cardType={CardType.Rewards}
@@ -243,7 +236,7 @@ const Home = () => {
           addCard={addCard}
           editCard={editCard}
           deleteCard={deleteCard}
-        ></List>
+        />
       </div>
 
       <h2 className="m-4">Chains</h2>
@@ -261,18 +254,15 @@ const Home = () => {
         })}
       </div> */}
       <div className="flex flex-col content-start m-4 border border-gray-400 bg-white rounded p-4 leading-normal">
-        {habits.map((habit: Habit, index: number) => {
-          return (
-            <Chain
-              habit={habit}
-              index={index}
-              setHabits={setHabits}
-              deleteCard={deleteCard}
-            />
-          );
-        })}
+        <ChainList
+          habits={habits}
+          setHabits={setHabits}
+          addHabit={addHabit}
+          deleteCard={deleteCard}
+          deleteHabit={deleteHabit}
+        />
       </div>
-      {/* <button onClick={() => syncStateWithIdb(CardType.Gainers)}>Debug button</button> */}
+      {/* <button onClick={() => console.log(habits)}>Debug button</button> */}
     </DndProvider>
   );
 };
