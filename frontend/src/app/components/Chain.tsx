@@ -26,6 +26,7 @@ const Chain = ({
         }
         type={CardType.Gainers}
         setHabits={setHabits}
+        deleteCard={deleteCard}
       />
       <ChainCard
         habitId={habit.id}
@@ -36,6 +37,7 @@ const Chain = ({
         }
         type={CardType.Sappers}
         setHabits={setHabits}
+        deleteCard={deleteCard}
       />
       <ChainCard
         habitId={habit.id}
@@ -46,6 +48,7 @@ const Chain = ({
         }
         type={CardType.Rewards}
         setHabits={setHabits}
+        deleteCard={deleteCard}
       />
     </div>
   );

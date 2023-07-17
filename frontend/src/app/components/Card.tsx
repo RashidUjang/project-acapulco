@@ -85,7 +85,7 @@ const Card = ({
 
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.CARD,
-    item: { id, index: cardIndex, type: cardType },
+    item: { id, text: taskTitle, index: cardIndex, type: cardType },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
